@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
       - name: api
-        image: desenvolvimentodaian/api-produto:versao-teste
+        image: desenvolvimentodaian/api-produto:{{tag}}
         resources: {}
         ports:
         - containerPort: 80

@@ -4,15 +4,14 @@ pipeline{
     stages{
         stage('Checkout Source'){
             steps{
-                git url: 'https://github.com/DaianCosta/pedelogo-catalogo'
+                git url: 'https://github.com/DaianCosta/pedelogo-catalogo', branch: 'master'
             }
         }
 
         stage('Build Image'){
             steps{
                 script{
-                    dockerapp = docker.build("desenvolvimentodaian/api-produto:${env.BUILD_ID}",
-                    '-f ./src/PedeLogo.Catalogo.Api/Dockerfile .')    
+                    dockerapp = docker.build("desenvolvimentodaian/api-produto:${env.BUILD_ID}", '-f ./src/PedeLogo.Catalogo.Api/Dockerfile .')    
                 }
             }
         }
@@ -24,6 +23,24 @@ pipeline{
                         dockerapp.push('latest')
                         dockerapp.push("${env.BUILD_ID}")  
                     }
+                }
+            }
+        }
+
+        stage('Deploy kubernetes'){
+            agent {
+                kubernetes{
+                    cloud 'kubernetes'
+                }
+            }
+            enviroment{
+                tag_version = "${env.BUILD_ID}"
+            }
+            steps{
+                script{
+                    sh 'sed -i "s/{{tag}}/$tag_version/g" ./k8s/api/deployment.yaml'
+                    sh 'cat ./k8s/api/deployment.yaml'
+                    kubernetesDeploy(configs: '**/k8s/**', kubeconfigId: 'kubeconfig')
                 }
             }
         }
